@@ -72,7 +72,7 @@ public class AccountServiceController {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
     public Mono<Account> getAccountById(@PathVariable String accountId) {
-        LOGGER.debug(String.format("getAccountById() {}", accountId));
+        LOGGER.debug("getAccountById() {}", accountId);
         return accountService.getAccountById(accountId);
     }
 
@@ -86,7 +86,7 @@ public class AccountServiceController {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
     public Mono<Account> updateAccount(@RequestBody Account account) {
-        LOGGER.debug(String.format("updateAccount() {}", account));
+        LOGGER.debug("updateAccount() {}", account);
         return accountService.updateAccount(account);
     }
 
@@ -100,7 +100,7 @@ public class AccountServiceController {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     })
     public Mono<String> deleteAccount(@PathVariable String accountId) {
-        LOGGER.debug(String.format("deleteAccount() {}", accountId));
+        LOGGER.debug("deleteAccount() {}", accountId);
         return accountService.deleteAccount(accountId);
     }
 
@@ -114,7 +114,7 @@ public class AccountServiceController {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
     public Mono<Account> createAccount(@RequestBody Account account) {
-        LOGGER.debug(String.format("createAccount() {}", account));
+        LOGGER.debug("createAccount() {}", account);
         return accountService.createAccount(account);
     }
 

@@ -15,11 +15,15 @@ class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthe
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UserNameJwtAuthenticationConverter.class);
 
-	private final Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
 	@Override
 	public AbstractAuthenticationToken convert(Jwt jwt) {
-		Collection<GrantedAuthority> authorities = this.jwtGrantedAuthoritiesConverter.convert(jwt);
+		JwtGrantedAuthoritiesConverter test = new JwtGrantedAuthoritiesConverter();
+		test.setAuthoritiesClaimName("groups");
+		test.setAuthorityPrefix("ROLE_");
+		Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter = test;
+
+		Collection<GrantedAuthority> authorities = jwtGrantedAuthoritiesConverter.convert(jwt);
+
 		return new JwtAuthenticationToken(jwt, authorities, getUserName(jwt));
 	}
 

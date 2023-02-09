@@ -17,10 +17,10 @@ public class KubernetesSecurityConfiguration {
 
 	@Bean
 	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity) {
-		httpSecurity.oauth2ResourceServer()
-				.jwt()
-				.jwtAuthenticationConverter(
-						new ReactiveJwtAuthenticationConverterAdapter(new UserNameJwtAuthenticationConverter()));
+		httpSecurity
+				.authorizeExchange(exchanges -> exchanges.anyExchange().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(
+						new ReactiveJwtAuthenticationConverterAdapter(new UserNameJwtAuthenticationConverter()))));
 
 		return httpSecurity.build();
 	}
