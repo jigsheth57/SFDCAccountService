@@ -1,10 +1,22 @@
 server:
-  port: ${PORT:52881}
+  port: ${PORT:52885}
+
+spring:
+  zipkin:
+    enabled: false
+    base-url: http://localhost:9411/
+  sleuth:
+    enabled: false
+    sampler:
+      probability: 1
 
 management:
   tracing:
-    enabled: true
+    enabled: false
     sampling.probability: 1.0 ## trace every call
+  # zipkin:
+  #   enabled: true
+  #   base-url: http://localhost:9411/
   endpoints:
     web:
       exposure:
@@ -15,24 +27,38 @@ management:
       show-details: always
     env:
       show-values: ALWAYS
-  server:
-    port: ${ACTUATOR_PORT:52891}
 
 logging:
   level:
-    com.force.api: DEBUG
-    com.vmware.sfdc.demo.accountservice: DEBUG
-    org.springframework.http.server.reactive: DEBUG
-    org.springframework.web.reactive: DEBUG
-    reactor.ipc.netty: DEBUG
-    reactor.netty: DEBUG
+    com.force.api: INFO
+    com.vmware.sfdc.demo: DEBUG
+    org.springframework.http.server.reactive: INFO
+    org.springframework.web.reactive: INFO
+    reactor.ipc.netty: INFO
+    reactor.netty: INFO
 
 sfdc:
+  authserviceURL: http://localhost:52880/api
   service:
     unavailable: '{"status":503,"data": "Service currently unavailable."}'
   query:
-    accounts: select account.id, account.name, account.type, (select contact.id, contact.lastname from account.contacts) from account
-    opp_by_accts: select account.id, account.name, account.type, (select opportunity.id, opportunity.name, opportunity.type, opportunity.amount, opportunity.stagename, opportunity.closedate from account.opportunities) from account
+    contactByAccounts: select account.id, account.name, account.type, (select contact.id, contact.lastname from account.contacts) from account
+    opportunityByAccounts: select account.id, account.name, account.type, (select opportunity.id, opportunity.name, opportunity.type, opportunity.amount, opportunity.stagename, opportunity.closedate from account.opportunities) from account
     loadsql: select account.id, account.name, account.type, account.description, account.industry, account.ownership, account.website, account.phone, account.NumberOfEmployees, (select contact.id, contact.title, contact.department, contact.email, contact.name, contact.salutation, contact.phone, contact.mobilePhone, contact.firstName, contact.accountId, contact.lastname from account.contacts), (select opportunity.id, opportunity.name, opportunity.type, opportunity.amount, opportunity.stagename, opportunity.closedate, opportunity.description, opportunity.nextStep, opportunity.leadSource, opportunity.accountId from account.opportunities) from account
 
-AUTHSERVICE_URL: http://localhost:52880
+springdoc:
+  swagger-ui.path: /swagger-ui.html
+  api-docs.path: /api-docs
+
+# spring.main.allow-bean-definition-overriding: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://dev-83469100.okta.com/oauth2/aus7m6k7v5EdD4eoQ5d7/v1/keys
