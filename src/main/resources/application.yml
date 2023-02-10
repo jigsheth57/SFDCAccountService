@@ -1,12 +1,6 @@
 server:
   port: ${PORT:52885}
 
-spring:
-  zipkin:
-    enabled: false
-  sleuth:
-    enabled: false
-
 management:
   endpoints:
     web.exposure.include: "*"
