@@ -2,12 +2,14 @@ package com.vmware.sfdc.demo.accountservice.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,9 +43,24 @@ public class AccountServiceController {
     @Operation(summary = "Returns result of account list based on query {$sfdc.query.contactByAccounts} against SalesForce.com", description = "Returns result of account list based on query {$sfdc.query.contactByAccounts} against SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AccountList.class)))
     })
-    public Mono<AccountList> getContactsByAccounts() {
+    public Mono<AccountList> getContactsByAccounts(@RequestHeader HttpHeaders headers) {
         LOGGER.debug("getContactsByAccounts()");
-        return accountService.getContactsByAccounts();
+        return accountService.getContactsByAccounts(headers);
+    }
+
+    /**
+     * Returns result of account list based on query {$sfdc.query.contactByAccounts}
+     * against SalesForce.com
+     * 
+     * @return AccountList
+     */
+    @GetMapping("/accounts-fallback")
+    @Operation(summary = "Returns result of account list based on query {$sfdc.query.contactByAccounts} against SalesForce.com", description = "Returns result of account list based on query {$sfdc.query.contactByAccounts} against SalesForce.com", responses = {
+            @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AccountList.class)))
+    })
+    public Mono<AccountList> getContactsByAccountsFallback(@RequestHeader HttpHeaders headers) {
+        LOGGER.debug("getContactsByAccountsFallback()");
+        return accountService.getContactsByAccountsFallback(headers);
     }
 
     /**
@@ -57,9 +74,25 @@ public class AccountServiceController {
     @Operation(summary = "Returns result of account list based on query {$sfdc.query.opportunityByAccounts} against SalesForce.com", description = "Returns result of account list based on query {$sfdc.query.opportunityByAccounts} against SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AccountList.class)))
     })
-    public Mono<AccountList> getOpportunitesByAccounts() {
+    public Mono<AccountList> getOpportunitesByAccounts(@RequestHeader HttpHeaders headers) {
         LOGGER.debug("getOpportunitesByAccounts()");
-        return accountService.getOpportunitesByAccounts();
+        return accountService.getOpportunitesByAccounts(headers);
+    }
+
+    /**
+     * Returns result of account list based on query
+     * {$sfdc.query.opportunityByAccounts} against
+     * SalesForce.com
+     * 
+     * @return AccountList
+     */
+    @GetMapping("/opp_by_accts-fallback")
+    @Operation(summary = "Returns result of account list based on query {$sfdc.query.opportunityByAccounts} against SalesForce.com", description = "Returns result of account list based on query {$sfdc.query.opportunityByAccounts} against SalesForce.com", responses = {
+            @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AccountList.class)))
+    })
+    public Mono<AccountList> getOpportunitesByAccountsFallback(@RequestHeader HttpHeaders headers) {
+        LOGGER.debug("getOpportunitesByAccountsFallback()");
+        return accountService.getOpportunitesByAccountsFallback(headers);
     }
 
     /**
@@ -71,9 +104,23 @@ public class AccountServiceController {
     @Operation(summary = "Returns result of an account by Id from SalesForce.com", description = "Returns result of an account by Id from SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
-    public Mono<Account> getAccountById(@PathVariable String accountId) {
-        LOGGER.debug("getAccountById() {}", accountId);
-        return accountService.getAccountById(accountId);
+    public Mono<Account> getAccountById(@PathVariable String accountId, @RequestHeader HttpHeaders headers) {
+        LOGGER.debug("getAccountById({})", accountId);
+        return accountService.getAccountById(accountId, headers);
+    }
+
+    /**
+     * Returns result of an account by Id from SalesForce.com
+     * 
+     * @return Account
+     */
+    @GetMapping("/account-fallback/{accountId}")
+    @Operation(summary = "Returns result of an account by Id from SalesForce.com", description = "Returns result of an account by Id from SalesForce.com", responses = {
+            @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
+    })
+    public Mono<Account> getAccountByIdFallback(@PathVariable String accountId, @RequestHeader HttpHeaders headers) {
+        LOGGER.debug("getAccountByIdFallback({})", accountId);
+        return accountService.getAccountByIdFallback(accountId, headers);
     }
 
     /**
@@ -85,9 +132,9 @@ public class AccountServiceController {
     @Operation(summary = "Update an account in SalesForce.com", description = "Update an account in SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
-    public Mono<Account> updateAccount(@RequestBody Account account) {
-        LOGGER.debug("updateAccount() {}", account);
-        return accountService.updateAccount(account);
+    public Mono<Account> updateAccount(@RequestBody Account account, @RequestHeader HttpHeaders headers) {
+        LOGGER.debug("updateAccount({})", account);
+        return accountService.updateAccount(account, headers);
     }
 
     /**
@@ -99,9 +146,9 @@ public class AccountServiceController {
     @Operation(summary = "Delete an account in SalesForce.com", description = "Delete an account in SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     })
-    public Mono<String> deleteAccount(@PathVariable String accountId) {
-        LOGGER.debug("deleteAccount() {}", accountId);
-        return accountService.deleteAccount(accountId);
+    public Mono<String> deleteAccount(@PathVariable String accountId, @RequestHeader HttpHeaders headers) {
+        LOGGER.debug("deleteAccount({})", accountId);
+        return accountService.deleteAccount(accountId, headers);
     }
 
     /**
@@ -113,9 +160,9 @@ public class AccountServiceController {
     @Operation(summary = "Create an account in SalesForce.com", description = "Create an account in SalesForce.com", responses = {
             @ApiResponse(description = "Successful Operation", responseCode = "200", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Account.class)))
     })
-    public Mono<Account> createAccount(@RequestBody Account account) {
-        LOGGER.debug("createAccount() {}", account);
-        return accountService.createAccount(account);
+    public Mono<Account> createAccount(@RequestBody Account account, @RequestHeader HttpHeaders headers) {
+        LOGGER.debug("createAccount({})", account);
+        return accountService.createAccount(account, headers);
     }
 
 }

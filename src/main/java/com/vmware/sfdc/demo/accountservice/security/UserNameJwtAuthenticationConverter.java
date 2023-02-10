@@ -17,6 +17,7 @@ class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthe
 
 	@Override
 	public AbstractAuthenticationToken convert(Jwt jwt) {
+		LOGGER.debug("convert({})", jwt);
 		JwtGrantedAuthoritiesConverter test = new JwtGrantedAuthoritiesConverter();
 		test.setAuthoritiesClaimName("groups");
 		test.setAuthorityPrefix("ROLE_");
@@ -28,6 +29,8 @@ class UserNameJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthe
 	}
 
 	private String getUserName(Jwt jwt) {
+		LOGGER.debug("getUserName({})",jwt);
+		LOGGER.info(jwt.getClaimAsString("name"));
 		if (jwt.hasClaim("name")) {
 			LOGGER.info("Username from claim 'name'");
 			return jwt.getClaimAsString("name");

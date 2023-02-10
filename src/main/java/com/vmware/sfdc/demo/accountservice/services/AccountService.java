@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import com.force.api.ApiSession;
@@ -22,37 +23,33 @@ public class AccountService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountService.class);
     ForceApi api;
 
-    @Autowired
-    private ReactiveRedisTemplate<String, Account> accountTemplate;
-
-    @Autowired
-    private ReactiveRedisTemplate<String, AccountList> accountListTemplate;
-
     private ReactiveValueOperations<String, Account> accountValueOps;
-
     private ReactiveValueOperations<String, AccountList> accountListValueOps;
 
     private String contactByAccounts;
-
     private String opportunityByAccounts;
 
     @Autowired
     public AccountService(AuthServiceClient authServiceClient,
             @Value("${sfdc.contactByAccounts}") String contactByAccounts,
-            @Value("${sfdc.opportunityByAccounts}") String opportunityByAccounts) {
+            @Value("${sfdc.opportunityByAccounts}") String opportunityByAccounts,
+            ReactiveRedisTemplate<String, Account> accountTemplate,
+            ReactiveRedisTemplate<String, AccountList> accountListTemplate) {
         this.authServiceClient = authServiceClient;
         this.contactByAccounts = contactByAccounts;
         this.opportunityByAccounts = opportunityByAccounts;
+        this.accountValueOps = accountTemplate.opsForValue();
+        this.accountListValueOps = accountListTemplate.opsForValue();
     }
 
-    public Mono<AccountList> getContactsByAccounts() {
+    public Mono<AccountList> getContactsByAccounts(HttpHeaders headers) {
         LOGGER.debug("getContactsByAccounts: contactByAccounts {}", contactByAccounts);
-        return (Mono<AccountList>) retrieve("/accounts");
+        return (Mono<AccountList>) retrieve("/accounts", headers);
     }
 
-    public Mono<AccountList> getContactsByAccountsFallback() {
-        LOGGER.debug("getContactsByAccounts: contactByAccounts {}", contactByAccounts);
-        return authServiceClient.getApiSession().map(apiSession -> {
+    public Mono<AccountList> getContactsByAccountsFallback(HttpHeaders headers) {
+        LOGGER.debug("getContactsByAccountsFallback: contactByAccounts {}", contactByAccounts);
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             AccountList accountList = new AccountList(this.api.query(contactByAccounts, Account.class).getRecords());
             try {
@@ -64,14 +61,14 @@ public class AccountService {
         });
     }
 
-    public Mono<AccountList> getOpportunitesByAccounts() {
+    public Mono<AccountList> getOpportunitesByAccounts(HttpHeaders headers) {
         LOGGER.debug("getOpportunitesByAccounts: opportunityByAccounts {}", opportunityByAccounts);
-        return (Mono<AccountList>) retrieve("/opp_by_accts");
+        return (Mono<AccountList>) retrieve("/opp_by_accts", headers);
     }
 
-    public Mono<AccountList> getOpportunitesByAccountsFallback() {
-        LOGGER.debug("getOpportunitesByAccounts: opportunityByAccounts {}", opportunityByAccounts);
-        return authServiceClient.getApiSession().map(apiSession -> {
+    public Mono<AccountList> getOpportunitesByAccountsFallback(HttpHeaders headers) {
+        LOGGER.debug("getOpportunitesByAccountsFallback: opportunityByAccounts {}", opportunityByAccounts);
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             AccountList accountList = new AccountList(
                     this.api.query(opportunityByAccounts, Account.class).getRecords());
@@ -84,14 +81,14 @@ public class AccountService {
         });
     }
 
-    public Mono<Account> getAccountById(String id) {
-        LOGGER.debug("getAccountById: {}", id);
-        return (Mono<Account>) retrieve(id);
+    public Mono<Account> getAccountById(String id, HttpHeaders headers) {
+        LOGGER.debug("getAccountById({})", id);
+        return (Mono<Account>) retrieve(id, headers);
     }
 
-    public Mono<Account> getAccountByIdFallback(String id) {
-        LOGGER.debug("getAccountById: {}", id);
-        return authServiceClient.getApiSession().map(apiSession -> {
+    public Mono<Account> getAccountByIdFallback(String id, HttpHeaders headers) {
+        LOGGER.debug("getAccountByIdFallback({})", id);
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             Account account = api.getSObject("account", id).as(Account.class);
             try {
@@ -103,11 +100,11 @@ public class AccountService {
         });
     }
 
-    public Mono<Account> updateAccount(Account account) {
-        LOGGER.debug("updateAccount: {}", account);
+    public Mono<Account> updateAccount(Account account, HttpHeaders headers) {
+        LOGGER.debug("updateAccount({})", account);
         String id = account.getId();
         account.setId(null);
-        return authServiceClient.getApiSession().map(apiSession -> {
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             api.updateSObject("account", id, account);
             Account mod_account = api.getSObject("account", id).as(Account.class);
@@ -120,9 +117,9 @@ public class AccountService {
         });
     }
 
-    public Mono<String> deleteAccount(String id) {
-        LOGGER.debug("deleteAccount: {}", id);
-        return authServiceClient.getApiSession().map(apiSession -> {
+    public Mono<String> deleteAccount(String id, HttpHeaders headers) {
+        LOGGER.debug("deleteAccount({})", id);
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             api.deleteSObject("account", id);
             try {
@@ -130,13 +127,13 @@ public class AccountService {
             } catch (Exception e) {
                 LOGGER.error(e.getMessage());
             }
-            return String.format("Account {} deleted!", id);
+            return String.format("Account %s deleted!", id);
         });
     }
 
-    public Mono<Account> createAccount(Account account) {
-        LOGGER.debug("createAccount: {}", account);
-        return authServiceClient.getApiSession().map(apiSession -> {
+    public Mono<Account> createAccount(Account account, HttpHeaders headers) {
+        LOGGER.debug("createAccount({})", account);
+        return authServiceClient.getApiSession(headers).map(apiSession -> {
             setApiSession(apiSession);
             String id = api.createSObject("account", account);
             account.setId(id);
@@ -150,7 +147,7 @@ public class AccountService {
     }
 
     private void setApiSession(ApiSession apiSession) {
-        LOGGER.debug("setApiSession: accessToken={}", apiSession.getAccessToken());
+        LOGGER.debug("setApiSession(accessToken={})", apiSession.getAccessToken());
         this.api = new ForceApi(apiSession);
     }
 
@@ -158,12 +155,12 @@ public class AccountService {
         LOGGER.debug("store({},{})", key, object);
         if (key != null) {
             if (object instanceof Account) {
-                accountValueOps = accountTemplate.opsForValue();
+                // accountValueOps = accountTemplate.opsForValue();
                 accountValueOps.set(key, (Account) object).subscribe(result -> {
                     LOGGER.debug("Account({}) cached? {}", key, result);
                 });
             } else if (object instanceof AccountList) {
-                accountListValueOps = accountListTemplate.opsForValue();
+                // accountListValueOps = accountListTemplate.opsForValue();
                 accountListValueOps.set(key, (AccountList) object).subscribe(result -> {
                     LOGGER.debug("AccountList({}) cached? {}", key, result);
                 });
@@ -175,7 +172,7 @@ public class AccountService {
         LOGGER.debug("remove({})", key);
         if (key != null) {
             if (!key.startsWith("/", 0)) {
-                accountValueOps = accountTemplate.opsForValue();
+                // accountValueOps = accountTemplate.opsForValue();
                 accountValueOps.delete(key).subscribe(result -> {
                     LOGGER.debug("Account({}) removed from cached? {}", key, result);
                 });
@@ -183,29 +180,29 @@ public class AccountService {
         }
     }
 
-    private Object retrieve(String key) {
+    private Object retrieve(String key, HttpHeaders headers) {
         LOGGER.debug("retrieve({})", key);
         if (key != null) {
             if (!key.startsWith("/", 0)) {
-                accountValueOps = accountTemplate.opsForValue();
                 return accountValueOps.get(key)
-                        .switchIfEmpty(Mono.defer(() -> getAccountByIdFallback(key)))
+                        .switchIfEmpty(Mono.defer(() -> getAccountByIdFallback(key, 
+                                headers)))
                         .onErrorResume(err -> {
                             LOGGER.error(err.getMessage());
                             return Mono.empty();
                         });
             } else if (key.equals("/accounts")) {
-                accountListValueOps = accountListTemplate.opsForValue();
                 return accountListValueOps.get(key)
-                        .switchIfEmpty(Mono.defer(() -> getContactsByAccountsFallback()))
+                        .switchIfEmpty(Mono.defer(() -> getContactsByAccountsFallback(
+                                headers)))
                         .onErrorResume(err -> {
                             LOGGER.error(err.getMessage());
                             return Mono.empty();
                         });
             } else if (key.equals("/opp_by_accts")) {
-                accountListValueOps = accountListTemplate.opsForValue();
                 return accountListValueOps.get(key)
-                        .switchIfEmpty(Mono.defer(() -> getOpportunitesByAccountsFallback()))
+                        .switchIfEmpty(Mono.defer(() -> getOpportunitesByAccountsFallback(
+                                headers)))
                         .onErrorResume(err -> {
                             LOGGER.error(err.getMessage());
                             return Mono.empty();
